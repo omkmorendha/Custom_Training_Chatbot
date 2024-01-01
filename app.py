@@ -114,7 +114,7 @@ def main():
             st.write(query_engine.query(query).response)
             
         save_button = st.button('Save Data Permanently')
-        if save_button:
+        if save_button:                                                                  
             index.storage_context.persist()
             index = load_index_from_storage(storage_context)
         
