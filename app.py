@@ -14,12 +14,20 @@ def main():
 
     data = st.selectbox('Data', ('Use Existing Files', 'Upload New File directly', 'Upload file using webhook'))
     
-    # if data == 'Use Existing Files':
     #Rebuild storage context and load index
     storage_context = StorageContext.from_defaults(persist_dir='./storage')
     index = load_index_from_storage(storage_context)
-        
-    if data == 'Upload New File directly':
+    
+    if data == 'Use Existing Files':
+        index = load_index_from_storage(storage_context)
+        query = st.text_input('Enter Your Query')
+        button = st.button(f'Response')
+        query_engine = index.as_query_engine()
+            
+        if button:
+            st.write(query_engine.query(query).response)
+                     
+    elif data == 'Upload New File directly':
         uploaded_file = st.file_uploader("Choose a CSV file")
         if uploaded_file is not None:
             bytes_data = uploaded_file.getvalue()
