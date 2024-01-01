@@ -121,18 +121,36 @@ def main():
     elif data == 'Upload file using webhook':
         url = st.text_input('Enter URL')  
         file_name = st.text_input('Enter File Name')  
+        upload_state = False
         
         def url_download():
             r = requests.get(url, stream = True, allow_redirects=True)        
             
             full_file_name = "./data/" + file_name
-            with open(full_file_name,"wb") as f: 
+            with open(full_file_name,"wb") as f:
+                upload_state = True 
                 for chunk in r.iter_content(chunk_size=1024): 
                 
                     if chunk: 
                         f.write(chunk) 
         
         st.button("Upload File", on_click=url_download)
+        if True:
+            documents = SimpleDirectoryReader("data").load_data()
+
+            #Construct the index with the Documents
+            index = VectorStoreIndex.from_documents(documents)
+            query = st.text_input('Enter Your Query')
+            button = st.button(f'Response')
+            query_engine = index.as_query_engine()
+                
+            if button:
+                st.write(query_engine.query(query).response)
+                
+            save_button = st.button('Save Data Permanently')
+            if save_button:
+                index.storage_context.persist()
+                index = load_index_from_storage(storage_context)
         
 if __name__ == '__main__':
     main()
