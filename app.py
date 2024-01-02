@@ -151,14 +151,17 @@ def main():
             if save_button:
                 index.storage_context.persist()
                 index = load_index_from_storage(storage_context)
+    
     elif data == 'Manage Files':
         filelist=[]
         for root, dirs, files in os.walk("data"):
             for file in files:
                     filename=os.path.join(root, file)
                     filelist.append(file)
-                    st.write(file)
-        #st.write(filelist)   
+                    
+                    if(st.button('Delete ' + file)):
+                        os.remove('./data/' + file)
+                        st.rerun()
     
 if __name__ == '__main__':
     main()
