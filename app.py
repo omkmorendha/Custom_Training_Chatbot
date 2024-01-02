@@ -13,7 +13,7 @@ def main():
     st.header('Custom-Made Chatbots')
     st.write("Select the data that your chatbot should be trained with:")
 
-    data = st.selectbox('Data', ('Use Existing Files', 'Upload New File directly', 'Upload file using webhook', 'Upload CSV'))
+    data = st.selectbox('Data', ('Use Existing Files', 'Upload New File directly', 'Upload file using webhook', 'Upload CSV', 'Manage Files'))
     
     #Rebuild storage context and load index
     storage_context = StorageContext.from_defaults(persist_dir='./storage')
@@ -151,6 +151,14 @@ def main():
             if save_button:
                 index.storage_context.persist()
                 index = load_index_from_storage(storage_context)
-        
+    elif data == 'Manage Files':
+        filelist=[]
+        for root, dirs, files in os.walk("data"):
+            for file in files:
+                    filename=os.path.join(root, file)
+                    filelist.append(file)
+                    st.write(file)
+        #st.write(filelist)   
+    
 if __name__ == '__main__':
     main()
