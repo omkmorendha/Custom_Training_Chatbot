@@ -172,7 +172,8 @@ def main():
     st.header('Custom-Training Chatbot')
     st.write("Upload, Delete or Query the data using Chatbot:")
 
-    data = st.selectbox('Option', ('Use Existing Files', 'Upload New File directly', 'Upload file using webhook', 'Upload CSV', 'Manage Files'))
+    #data = st.selectbox('Option', ('Use Existing Files', 'Upload New File directly', 'Upload file using webhook', 'Upload CSV', 'Manage Files'))
+    data = st.selectbox('Option', ('Use Existing Files', 'Upload New File directly', 'Upload file using webhook', 'Manage Files'))
     
     if data == 'Use Existing Files':
         exisiting_files()
