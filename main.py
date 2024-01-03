@@ -11,6 +11,28 @@ import requests
 # Load API Keys
 load_dotenv()
 
+def authenticate():
+    """
+    Simple authentication function that checks for authentication via an API key
+    which is defined in the .env file, if the key exists in the api_keys.txt file
+    True is returned otherwise False is returned
+    """
+    
+    try:
+        api_key = os.getenv("API_KEY")
+        with open("api_keys.txt", 'r') as file:
+            # Read the entire file content
+            file_content = file.read()
+
+            # Check if the target string exists in the file
+            if api_key in file_content:
+                return True
+            else:
+                return False
+    except Exception as e:
+        print(f"Could not authenticate: {e}")
+        return False
+
 def create_tmp_folder_files(folder):
     os.makedirs(folder)
     file_path = os.path.join(folder, "tmp.txt")
@@ -22,6 +44,11 @@ def save_index():
     """
     Saves the index to the storage folder
     """
+
+    #Authentication
+    if(not authenticate()):
+        print("Authentication Failed")
+        return
 
     # Create the folder if it doesn't exist
     if not os.path.exists("data"):
@@ -45,6 +72,11 @@ def load_index():
     Loads the saved index from the storage folder
     """
 
+    #Authentication
+    if(not authenticate()):
+        print("Authentication Failed")
+        return
+
     # If index was not previously created, create new
     if not os.path.exists("storage"):
         return save_index()
@@ -61,6 +93,12 @@ def query(query_input: str) -> str:
     By sending the input via a paramter, this function returns the chatbot's response
     Returns an output based on the custom dataset
     """
+    
+    #Authentication
+    if(not authenticate()):
+        print("Authentication Failed")
+        return
+    
     index = load_index()
     query_engine = index.as_query_engine()
 
@@ -73,6 +111,11 @@ def upload_webhook(url: str, file_name: str):
     If upload is successful "True" is returned, else "False is returned"
     """
     try:
+        #Authentication
+        if(not authenticate()):
+            print("Authentication Failed")
+            return
+        
         r = requests.get(url, stream=True, allow_redirects=True)
 
         # Check if the request was successful (status code 200)
@@ -102,6 +145,11 @@ def delete_upload_file(file_name):
     Returns False if file couldn't be deleted and True if otherwise
     """
     try:
+        #Authentication
+        if(not authenticate()):
+            print("Authentication Failed")
+            return
+        
         target_folder = "./data/"
         file_path = os.path.join(target_folder, file_name)
         os.remove(file_path)
@@ -120,6 +168,11 @@ def delete_all_upload_files():
     Returns False if files couldn't be deleted and True if otherwise
     """
     try:
+        #Authentication
+        if(not authenticate()):
+            print("Authentication Failed")
+            return
+            
         folder_path = "./data/"
         all_files = os.listdir(folder_path)
         
@@ -140,6 +193,11 @@ def delete_webhook(file_name):
     Returns False if file couldn't be deleted and True if otherwise
     """
     try:
+        #Authentication
+        if(not authenticate()):
+            print("Authentication Failed")
+            return
+        
         target_folder = "./data_webhooks/"
         file_path = os.path.join(target_folder, file_name)
         os.remove(file_path)
@@ -159,6 +217,11 @@ def delete_all_webhooks():
     Returns False if files couldn't be deleted and True if otherwise
     """
     try:
+        #Authentication
+        if(not authenticate()):
+            print("Authentication Failed")
+            return
+        
         folder_path = "./data_webhooks/"
         all_files = os.listdir(folder_path)
         
@@ -180,5 +243,5 @@ def upload_direct():
 
 
 #Testing Code
-# if __name__ == "__main__":
-#     pass
+if __name__ == "__main__":
+    print(authenticate())
