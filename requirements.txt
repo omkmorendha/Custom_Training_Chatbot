@@ -1,0 +1,5 @@
+llama-index==0.9.24; python_version < '4.0' and python_full_version >= '3.8.1'
+openai==1.6.1; python_full_version >= '3.7.1'
+pypdf==3.17.4; python_version >= '3.6'
+python-dotenv==1.0.0; python_version >= '3.8'
+requests==2.31.0; python_version >= '3.7'
