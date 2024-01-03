@@ -9,6 +9,7 @@ llama-index = "*"
 python-dotenv = "*"
 streamlit = "*"
 pypdf = "*"
+streamlit-authenticator = "*"
 
 [dev-packages]
 
