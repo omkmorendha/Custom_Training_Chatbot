@@ -11,6 +11,12 @@ import requests
 # Load API Keys
 load_dotenv()
 
+def create_tmp_folder_files(folder):
+    os.makedirs(folder)
+    file_path = os.path.join(folder, "tmp.txt")
+    with open(file_path, "w") as file:
+        file.write("")
+    
 
 def save_index():
     """
@@ -19,16 +25,17 @@ def save_index():
 
     # Create the folder if it doesn't exist
     if not os.path.exists("data"):
-        os.makedirs("data")
-        file_path = os.path.join("data", "tmp.txt")
-        with open(file_path, "w") as file:
-            file.write("")
-
-    # Load Custom Data
-    documents = SimpleDirectoryReader("data").load_data()
-
-    # Construct the index with the Documents
-    index = VectorStoreIndex.from_documents(documents)
+        create_tmp_folder_files("data")
+     
+    if not os.path.exists("data_webhooks"):
+        create_tmp_folder_files("data_webhooks")        
+    
+    # Load Custom Data and construct the index with the Documents
+    documents_direct = SimpleDirectoryReader("data").load_data()
+    documents_webhooks = SimpleDirectoryReader("data_webhooks").load_data() 
+    doc_list = documents_direct + documents_webhooks
+    index = VectorStoreIndex.from_documents(doc_list)
+        
     index.storage_context.persist()
     return index
 
@@ -72,10 +79,10 @@ def upload_webhook(url: str, file_name: str):
         r.raise_for_status()
 
         # Create the folder if it doesn't exist
-        if not os.path.exists("data"):
-            os.makedirs("data")
+        if not os.path.exists("data_webhooks"):
+            os.makedirs("data_webhooks")
 
-        full_file_name = "./data/" + file_name
+        full_file_name = "./data_webhooks/" + file_name
         with open(full_file_name, "wb+") as f:
             for chunk in r.iter_content(chunk_size=1024):
                 if chunk:
@@ -91,7 +98,7 @@ def upload_webhook(url: str, file_name: str):
 
 def delete_file(file_name):
     """
-    Deletes a file using the saved file's name in the data folder
+    Deletes an uploaded file using the saved file's name in the data folder
     Returns False if file couldn't be deleted and True if otherwise
     """
     try:
@@ -106,22 +113,54 @@ def delete_file(file_name):
         print(f"Error deleting file: {e}")
         return False
 
+def delete_upload_files():
+    """
+    Deletes all the uploaded files
+    Keeps a temporary text file to avoid indexing errors
+    Returns False if files couldn't be deleted and True if otherwise
+    """
+    try:
+        folder_path = "./data/"
+        all_files = os.listdir(folder_path)
+        
+        for file_name in all_files:
+            if file_name != "tmp.txt":
+                file_path = os.path.join(folder_path, file_name)
+                os.remove(file_path)
+        
+        save_index()
+        return True 
+    except Exception as e:
+        print(f"Error deleting files: {e}")
+        return False       
 
+def delete_webhooks():
+    """
+    Deletes all the webhooks
+    Keeps a temporary text file to avoid indexing errors
+    Returns False if files couldn't be deleted and True if otherwise
+    """
+    try:
+        folder_path = "./data_webhooks/"
+        all_files = os.listdir(folder_path)
+        
+        for file_name in all_files:
+            if file_name != "tmp.txt":
+                file_path = os.path.join(folder_path, file_name)
+                os.remove(file_path)
+        
+        save_index()
+    except Exception as e:
+        print(f"Error deleting files: {e}")
+        return False      
+        
+    
 def upload_direct():
     # USE A FILE UPLOADER TOOL
     # AND THEN CALL THE save_index() function
     save_index()
 
 
-# Testing Code
+#Testing Code
 # if __name__ == "__main__":
-#     resp = query("Tell me about the black cat")
-#     print(resp)
-
-#     upload_webhook("https://americanenglish.state.gov/files/ae/resource_files/the_black_cat.pdf", "the_black_cat.pdf")
-#     resp = query("Tell me about the black cat")
-#     print(resp)
-
-#     delete_file("the_black_cat.pdf")
-#     resp = query("Tell me about the black cat")
-#     print(resp)
+#     pass
