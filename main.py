@@ -96,7 +96,7 @@ def upload_webhook(url: str, file_name: str):
         return False
 
 
-def delete_file(file_name):
+def delete_upload_file(file_name):
     """
     Deletes an uploaded file using the saved file's name in the data folder
     Returns False if file couldn't be deleted and True if otherwise
@@ -113,7 +113,7 @@ def delete_file(file_name):
         print(f"Error deleting file: {e}")
         return False
 
-def delete_upload_files():
+def delete_all_upload_files():
     """
     Deletes all the uploaded files
     Keeps a temporary text file to avoid indexing errors
@@ -134,7 +134,25 @@ def delete_upload_files():
         print(f"Error deleting files: {e}")
         return False       
 
-def delete_webhooks():
+def delete_webhook(file_name):
+    """
+    Deletes a webhook uploaded file using the saved file's name in the data_webhooks folder
+    Returns False if file couldn't be deleted and True if otherwise
+    """
+    try:
+        target_folder = "./data_webhooks/"
+        file_path = os.path.join(target_folder, file_name)
+        os.remove(file_path)
+
+        save_index()
+        return True
+
+    except Exception as e:
+        print(f"Error deleting file: {e}")
+        return False
+     
+
+def delete_all_webhooks():
     """
     Deletes all the webhooks
     Keeps a temporary text file to avoid indexing errors
