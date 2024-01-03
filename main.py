@@ -105,7 +105,7 @@ def query(query_input: str) -> str:
     return query_engine.query(query_input).response
 
 
-def upload_webhook(url: str, file_name: str):
+def upload_webhook(url: str, file_name: str = "uploaded_file"):
     """
     Pass the url of the file to be downloaded, along with file_name to be saved as locally
     If upload is successful "True" is returned, else "False is returned"
@@ -116,6 +116,12 @@ def upload_webhook(url: str, file_name: str):
             print("Authentication Failed")
             return
         
+        #Add automated extension
+        if(file_name == "uploaded_file"):
+            words = url.split('.')
+            ext = words[-1].strip()
+            file_name += "." + ext
+
         r = requests.get(url, stream=True, allow_redirects=True)
 
         # Check if the request was successful (status code 200)
@@ -261,11 +267,11 @@ def upload_direct():
 
 #Testing Code
 # if __name__ == "__main__":
-#     print(query("Tell me about Aashish"))
+#     print(query("Tell me about the black cat"))
     
-#     txt = "Aashish's top 5 fruits would have to be: Strawberry, blueberry, apple, banana, and orange. This is a tough ranking that he spent hours mulling over. Strawberries are a no-brainer. They're delicious, have low calories, and can be eaten by themselves or as a topping. Aashish prefers adding them to oatmeal and pancakes. The same goes for blueberries, though they don't taste as well, which is why they rank second. Apples have this sweet and yet tart flavor that you can never get bored of. He tends to eat them alone though. There are recipes that attempt to make dishes with apples (e.g., apple french toast), but they always end up reducing the flavor of the apple. Bananas are a staple. They're healthy and cheap, so Aashish always includes them in my pantry. They're also the easiest to incorporate into cooking, given that they work with many other flavors. Furthermore, when bananas blacken, they can still be used in many baking recipes. That being said, the taste of a banana itself doesn't rival strawberries, blueberries, or apples. So, they rank fourth. Finally, oranges are incredibly rich in flavor, ranging from sweet to sour. Aashish never gets tired of them. However, they're difficult to incorporate into dishes. He's seen oranges added to salads, but that, to him, is just blasphemous. Ultimately, he rarely buys them, despite finding them delicious, which is why they rank fifth. "
-#     upload_text(txt)
-#     print(query("Tell me about Aashish"))
+#     url = "https://americanenglish.state.gov/files/ae/resource_files/the_black_cat.pdf"
+#     upload_webhook(url)
+#     print(query("Tell me about the black cat"))
     
-#     delete_all_upload_files()
-#     print(query("Tell me about Aashish"))
+#     delete_all_webhooks()
+#     print(query("Tell me about the black cat"))
