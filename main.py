@@ -145,6 +145,11 @@ def upload_webhook(url: str, file_name: str = "uploaded_file"):
         return False
 
 def upload_text(text_to_append: str, file_name : str = "text.txt"):
+    """
+    Uploads text to a new file or appends it to a default file (text.txt)
+    returns True if text is successfully added and False if unsuccessfull
+    """
+    
     try:
         #Authentication
         if(not authenticate()):
@@ -158,8 +163,10 @@ def upload_text(text_to_append: str, file_name : str = "text.txt"):
             file.write(text_to_append)
             
         save_index()
+        return True
     except Exception as e:
         print(f'Error appending to {file_path}: {e}')
+        return False
 
 
 def delete_upload_file(file_name):
