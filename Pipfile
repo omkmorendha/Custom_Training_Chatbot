@@ -8,6 +8,7 @@ openai = "*"
 llama-index = "*"
 python-dotenv = "*"
 pypdf = "*"
+flask = "*"
 
 [dev-packages]
 

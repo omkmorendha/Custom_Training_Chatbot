@@ -1,3 +1,4 @@
+from flask import Flask, request, jsonify
 from llama_index import (
     StorageContext,
     load_index_from_storage,
@@ -9,11 +10,13 @@ import os
 import requests
 import hashlib
 
+app = Flask(__name__)
+
 # Load API Keys
 load_dotenv()
 
 
-def authenticate():
+def authenticate(api_key):
     """
     Simple authentication function that checks for authentication via an API key
     which is defined in the .env file, if the key exists in the api_keys.txt file
@@ -22,7 +25,6 @@ def authenticate():
     # currently keys "abcd", "efgh", "ijkl"
 
     try:
-        api_key = os.getenv("API_KEY")
         hash_api_key = hashlib.sha256(api_key.encode()).hexdigest()
 
         with open("api_keys.txt", "r") as file:
@@ -46,15 +48,16 @@ def create_tmp_folder_files(folder):
         file.write("")
 
 
+@app.route("/save-index", methods=["GET"])
 def save_index():
     """
     Saves the index to the storage folder
     """
 
     # Authentication
-    if not authenticate():
-        print("Authentication Failed")
-        return
+    api_key = request.headers.get("Authorization")
+    if not authenticate(api_key):
+        return jsonify({"message": "Authentication Failed"}), 401
 
     # Create the folder if it doesn't exist
     if not os.path.exists("data"):
@@ -70,7 +73,7 @@ def save_index():
     index = VectorStoreIndex.from_documents(doc_list)
 
     index.storage_context.persist()
-    return index
+    return jsonify({"message": "Index saved successfully"})
 
 
 def load_index():
@@ -79,9 +82,9 @@ def load_index():
     """
 
     # Authentication
-    if not authenticate():
-        print("Authentication Failed")
-        return
+    api_key = request.headers.get("Authorization")
+    if not authenticate(api_key):
+        return jsonify({"message": "Authentication Failed"}), 401
 
     # If index was not previously created, create new
     if not os.path.exists("storage"):
@@ -93,40 +96,53 @@ def load_index():
     return index
 
 
-def query(query_input: str) -> str:
+@app.route("/query", methods=["POST"])
+def query_route():
     """
     Pass a Query to the chatbot using this function
-    By sending the input via a paramter, this function returns the chatbot's response
+    By sending the input via a parameter, this function returns the chatbot's response
     Returns an output based on the custom dataset
     """
 
     # Authentication
-    if not authenticate():
-        print("Authentication Failed")
-        return
+    api_key = request.headers.get("Authorization")
+    if not authenticate(api_key):
+        return jsonify({"message": "Authentication Failed"}), 401
+
+    query_input = request.json.get("query_input")
+    if not query_input:
+        return jsonify({"message": "Missing 'query_input' in the request body"}), 400
 
     index = load_index()
     query_engine = index.as_query_engine()
 
-    return query_engine.query(query_input).response
+    response = query_engine.query(query_input).response
+    return jsonify({"message": response})
 
 
-def upload_webhook(url: str, file_name: str = "uploaded_file"):
+@app.route("/upload-webhook", methods=["POST"])
+def upload_webhook_route():
     """
     Pass the url of the file to be downloaded, along with file_name to be saved as locally
     If upload is successful "True" is returned, else "False is returned"
     """
+
+    # Authentication
+    api_key = request.headers.get("Authorization")
+    if not authenticate(api_key):
+        return jsonify({"message": "Authentication Failed"}), 401
+
     try:
-        # Authentication
-        if not authenticate():
-            print("Authentication Failed")
-            return
+        url = request.json.get("url")
+        if not url:
+            return jsonify({"message": "Missing 'url' in the request body"}), 400
+
+        file_name = request.json.get("file_name")
 
         # Add automated extension
-        if file_name == "uploaded_file":
-            words = url.split(".")
-            ext = words[-1].strip()
-            file_name += "." + ext
+        if not file_name:
+            words = url.split("/")
+            file_name = words[-1].strip()
 
         r = requests.get(url, stream=True, allow_redirects=True)
 
@@ -145,72 +161,84 @@ def upload_webhook(url: str, file_name: str = "uploaded_file"):
 
         # Save new index
         save_index()
-        return True
+        return jsonify({"message": "Upload successful"}), 200
 
     except requests.exceptions.RequestException as e:
-        return False
+        return jsonify({"message": f"Upload failed: {e}"}), 500
 
 
-def upload_text(text_to_append: str, file_name: str = "text.txt"):
+@app.route("/upload-text", methods=["POST"])
+def upload_text_route():
     """
     Uploads text to a new file or appends it to a default file (text.txt)
-    returns True if text is successfully added and False if unsuccessfull
+    Returns True if text is successfully added and False if unsuccessful
     """
+    # Authentication
+    api_key = request.headers.get("Authorization")
+    if not authenticate(api_key):
+        return jsonify({"message": "Authentication Failed"}), 401
 
     try:
-        # Authentication
-        if not authenticate():
-            print("Authentication Failed")
-            return
-
+        text_to_append = request.json.get("text")
+        file_name = request.json.get("file_name", "uploaded_text.txt")
+        
         target_folder = "data/"
         file_path = os.path.join(target_folder, file_name)
 
         with open(file_path, "a+") as file:
-            file.write(text_to_append)
+            # Check if the file already exists
+            if os.path.exists(file_path):
+                # Append text with a newline if the file already exists
+                file.write("\n" + text_to_append)
+            else:
+                file.write(text_to_append)
+
 
         save_index()
-        return True
+        return jsonify({"message": "Text uploaded successfully"}), 200
+
     except Exception as e:
-        print(f"Error appending to {file_path}: {e}")
-        return False
+        return jsonify({"message": f"Error uploading text: {e}"}), 500
 
 
-def delete_upload_file(file_name):
+@app.route("/delete-upload-file", methods=["POST"])
+def delete_upload_file_route():
     """
     Deletes an uploaded file using the saved file's name in the data folder
-    Returns False if file couldn't be deleted and True if otherwise
+    Returns False if the file couldn't be deleted and True if otherwise
     """
-    try:
-        # Authentication
-        if not authenticate():
-            print("Authentication Failed")
-            return
+    # Authentication
+    api_key = request.headers.get("Authorization")
+    if not authenticate(api_key):
+        return jsonify({"message": "Authentication Failed"}), 401
 
+    try:
+        file_name = request.json.get("file_name")
+        
         target_folder = "./data/"
         file_path = os.path.join(target_folder, file_name)
         os.remove(file_path)
 
         save_index()
-        return True
+        return jsonify({"message": "File deleted successfully"}), 200
 
     except Exception as e:
-        print(f"Error deleting file: {e}")
-        return False
+        return jsonify({"message": f"Error deleting file: {e}"}), 500
 
 
-def delete_all_upload_files():
+@app.route("/delete-all-upload-files", methods=["POST"])
+def delete_all_upload_files_route():
     """
     Deletes all the uploaded files
     Keeps a temporary text file to avoid indexing errors
     Returns False if files couldn't be deleted and True if otherwise
     """
-    try:
-        # Authentication
-        if not authenticate():
-            print("Authentication Failed")
-            return
+    # Authentication
+    api_key = request.headers.get("Authorization")
+    if not authenticate(api_key):
+        return jsonify({"message": "Authentication Failed"}), 401
 
+    try:
         folder_path = "./data/"
         all_files = os.listdir(folder_path)
 
@@ -220,47 +248,50 @@ def delete_all_upload_files():
                 os.remove(file_path)
 
         save_index()
-        return True
+        return jsonify({"message": "All files deleted successfully"}), 200
+
     except Exception as e:
-        print(f"Error deleting files: {e}")
-        return False
+        return jsonify({"message": f"Error deleting files: {e}"}), 500
 
 
-def delete_webhook(file_name):
+@app.route("/delete-webhook", methods=["POST"])
+def delete_webhook_route():
     """
     Deletes a webhook uploaded file using the saved file's name in the data_webhooks folder
     Returns False if file couldn't be deleted and True if otherwise
     """
-    try:
-        # Authentication
-        if not authenticate():
-            print("Authentication Failed")
-            return
+    # Authentication
+    api_key = request.headers.get("Authorization")
+    if not authenticate(api_key):
+        return jsonify({"message": "Authentication Failed"}), 401
 
+    try:
+        file_name = request.json.get("file_name")
+        
         target_folder = "./data_webhooks/"
         file_path = os.path.join(target_folder, file_name)
         os.remove(file_path)
 
         save_index()
-        return True
+        return jsonify({"message": "Webhook file deleted successfully"}), 200
 
     except Exception as e:
-        print(f"Error deleting file: {e}")
-        return False
+        return jsonify({"message": f"Error deleting file: {e}"}), 500
 
 
-def delete_all_webhooks():
+@app.route("/delete-all-webhooks", methods=["POST"])
+def delete_all_webhooks_route():
     """
     Deletes all the webhooks
     Keeps a temporary text file to avoid indexing errors
     Returns False if files couldn't be deleted and True if otherwise
     """
-    try:
-        # Authentication
-        if not authenticate():
-            print("Authentication Failed")
-            return
+    # Authentication
+    api_key = request.headers.get("Authorization")
+    if not authenticate(api_key):
+        return jsonify({"message": "Authentication Failed"}), 401
 
+    try:
         folder_path = "./data_webhooks/"
         all_files = os.listdir(folder_path)
 
@@ -270,9 +301,10 @@ def delete_all_webhooks():
                 os.remove(file_path)
 
         save_index()
+        return jsonify({"message": "All webhook files deleted successfully"}), 200
+
     except Exception as e:
-        print(f"Error deleting files: {e}")
-        return False
+        return jsonify({"message": f"Error deleting files: {e}"}), 500
 
 
 def upload_direct():
@@ -282,12 +314,5 @@ def upload_direct():
 
 
 # Testing Code
-# if __name__ == "__main__":
-#     print(query("Tell me about the black cat"))
-
-#     url = "https://americanenglish.state.gov/files/ae/resource_files/the_black_cat.pdf"
-#     upload_webhook(url)
-#     print(query("Tell me about the black cat"))
-
-#     delete_all_webhooks()
-#     print(query("Tell me about the black cat"))
+if __name__ == "__main__":
+    app.run(debug=True)
