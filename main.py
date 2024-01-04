@@ -117,7 +117,7 @@ def query_route():
     query_engine = index.as_query_engine()
 
     response = query_engine.query(query_input).response
-    return jsonify({"message": response})
+    return jsonify({"query_response": response}), 200
 
 
 @app.route("/upload-webhook", methods=["POST"])
@@ -170,7 +170,7 @@ def upload_webhook_route():
 @app.route("/upload-text", methods=["POST"])
 def upload_text_route():
     """
-    Uploads text to a new file or appends it to a default file (text.txt)
+    Uploads text to a new file or appends it to a default file (uploaded.txt)
     Returns True if text is successfully added and False if unsuccessful
     """
     # Authentication
@@ -200,7 +200,7 @@ def upload_text_route():
 
 
 @app.route("/upload-direct", methods=["POST"])
-def upload_direct():
+def upload_direct_route():
     """
     Direct Upload of file
     """
@@ -214,7 +214,7 @@ def upload_direct():
         if "file" not in request.files:
             return jsonify({"message": "No files provided"}), 400
 
-        files = request.files.getlist("file")
+        files = request.files.getlist("files")
 
         # Specify the target folder for file uploads
         target_folder = "data/"
@@ -279,7 +279,9 @@ def delete_upload_file_route():
 
     try:
         file_name = request.json.get("file_name")
-
+        if not file_name:
+            return jsonify({"message": "Missing 'file_name' in the request body"}), 400
+        
         target_folder = "./data/"
         file_path = os.path.join(target_folder, file_name)
         os.remove(file_path)
@@ -332,6 +334,8 @@ def delete_webhook_route():
 
     try:
         file_name = request.json.get("file_name")
+        if not file_name:
+            return jsonify({"message": "Missing 'file_name' in the request body"}), 400
 
         target_folder = "./data_webhooks/"
         file_path = os.path.join(target_folder, file_name)
@@ -375,3 +379,4 @@ def delete_all_webhooks_route():
 # Testing Code
 if __name__ == "__main__":
     app.run(debug=True)
+    
