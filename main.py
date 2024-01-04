@@ -88,7 +88,7 @@ def load_index():
 
     # If index was not previously created, create new
     if not os.path.exists("storage"):
-        return save_index()
+        save_index()
 
     # Load previously saved index from the storage directory
     storage_context = StorageContext.from_defaults(persist_dir="./storage")
@@ -181,24 +181,89 @@ def upload_text_route():
     try:
         text_to_append = request.json.get("text")
         file_name = request.json.get("file_name", "uploaded_text.txt")
-        
+
         target_folder = "data/"
         file_path = os.path.join(target_folder, file_name)
 
-        with open(file_path, "a+") as file:
-            # Check if the file already exists
-            if os.path.exists(file_path):
-                # Append text with a newline if the file already exists
-                file.write("\n" + text_to_append)
-            else:
-                file.write(text_to_append)
+        with open(file_path, "a") as file:
+            # Append text with a newline if the file already exists
+            if file.tell() != 0:  # Check if the file is not empty
+                file.write("\n")
 
+            file.write(text_to_append)
 
         save_index()
         return jsonify({"message": "Text uploaded successfully"}), 200
 
     except Exception as e:
         return jsonify({"message": f"Error uploading text: {e}"}), 500
+
+
+@app.route("/upload-direct", methods=["POST"])
+def upload_direct():
+    """
+    Direct Upload of file
+    """
+    # Authentication
+    api_key = request.headers.get("Authorization")
+    if not authenticate(api_key):
+        return jsonify({"message": "Authentication Failed"}), 401
+
+    try:
+        # Check if the POST request has files
+        if "file" not in request.files:
+            return jsonify({"message": "No files provided"}), 400
+
+        files = request.files.getlist("file")
+
+        # Specify the target folder for file uploads
+        target_folder = "data/"
+        os.makedirs(target_folder, exist_ok=True)
+
+        for file in files:
+            file_path = os.path.join(target_folder, file.filename)
+            file.save(file_path)
+
+        save_index()
+        return jsonify({"message": "Files uploaded successfully"}), 200
+    except Exception as e:
+        return jsonify({"message": f"Error uploading file: {e}"}), 500
+
+
+@app.route("/show-upload-files", methods=["GET"])
+def show_upload_files():
+    """
+    Shows all the files uploaded in the /data folder
+    """
+    # Authentication
+    api_key = request.headers.get("Authorization")
+    if not authenticate(api_key):
+        return jsonify({"message": "Authentication Failed"}), 401
+
+    try:
+        files = [f for f in os.listdir("./data") if f != "tmp.txt"]
+        response = {"message": f"Files in directory data/ :", "files": files}
+        return jsonify(response)
+    except Exception as e:
+        return jsonify({"message": f"Error showing files: {e}"}), 500
+
+
+@app.route("/show-webhook-files", methods=["GET"])
+def show_webhook_files():
+    """
+    Shows all the files uploaded in the /data folder
+    """
+    # Authentication
+    api_key = request.headers.get("Authorization")
+    if not authenticate(api_key):
+        return jsonify({"message": "Authentication Failed"}), 401
+
+    try:
+        files = [f for f in os.listdir("./data_webhooks") if f != "tmp.txt"]
+        response = {"message": f"Files in directory data_webhooks/ :", "files": files}
+        return jsonify(response)
+    except Exception as e:
+        return jsonify({"message": f"Error showing files: {e}"}), 500
 
 
 @app.route("/delete-upload-file", methods=["POST"])
@@ -214,7 +279,7 @@ def delete_upload_file_route():
 
     try:
         file_name = request.json.get("file_name")
-        
+
         target_folder = "./data/"
         file_path = os.path.join(target_folder, file_name)
         os.remove(file_path)
@@ -226,7 +291,7 @@ def delete_upload_file_route():
         return jsonify({"message": f"Error deleting file: {e}"}), 500
 
 
-@app.route("/delete-all-upload-files", methods=["POST"])
+@app.route("/delete-all-upload-files", methods=["GET"])
 def delete_all_upload_files_route():
     """
     Deletes all the uploaded files
@@ -267,7 +332,7 @@ def delete_webhook_route():
 
     try:
         file_name = request.json.get("file_name")
-        
+
         target_folder = "./data_webhooks/"
         file_path = os.path.join(target_folder, file_name)
         os.remove(file_path)
@@ -279,7 +344,7 @@ def delete_webhook_route():
         return jsonify({"message": f"Error deleting file: {e}"}), 500
 
 
-@app.route("/delete-all-webhooks", methods=["POST"])
+@app.route("/delete-all-webhooks", methods=["GET"])
 def delete_all_webhooks_route():
     """
     Deletes all the webhooks
@@ -305,12 +370,6 @@ def delete_all_webhooks_route():
 
     except Exception as e:
         return jsonify({"message": f"Error deleting files: {e}"}), 500
-
-
-def upload_direct():
-    # USE A FILE UPLOADER TOOL
-    # AND THEN CALL THE save_index() function
-    save_index()
 
 
 # Testing Code
