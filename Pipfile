@@ -8,6 +8,8 @@ openai = "*"
 llama-index = "*"
 python-dotenv = "*"
 pypdf = "*"
+streamlit = "*"
+streamlit-authenticator = "*"
 flask = "*"
 
 [dev-packages]
