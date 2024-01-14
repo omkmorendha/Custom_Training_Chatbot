@@ -4,13 +4,14 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-openai = "*"
-llama-index = "*"
+openai = "==1.6.1"
+llama-index = "==0.9.24"
 python-dotenv = "*"
-pypdf = "*"
+pypdf = "==3.17.4"
 streamlit = "*"
 streamlit-authenticator = "*"
-flask = "*"
+flask = "==3.0.0"
+requests = "==2.31.0"
 
 [dev-packages]
 

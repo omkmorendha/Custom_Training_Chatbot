@@ -22,9 +22,6 @@ storage_context = StorageContext.from_defaults(persist_dir="./storage")
 index = load_index_from_storage(storage_context)
 
 
-
-
-
 def save_index():
     # Load Custom Data
     documents = SimpleDirectoryReader("data").load_data()
@@ -215,25 +212,7 @@ def main():
 
 
 if __name__ == "__main__":
-    with open('./config.yaml') as file:
+    with open("./config.yaml") as file:
         config = yaml.load(file, Loader=SafeLoader)
-    
-    authenticator = stauth.Authenticate(
-        config['credentials'],
-        config['cookie']['name'],
-        config['cookie']['key'],
-        config['cookie']['expiry_days'],
-        config['preauthorized']
-    )
-    name, authentication_status, username = authenticator.login('Login', 'main')
-    
-    if st.session_state["authentication_status"]:
-        main()
-        st.write('')
-        st.write('')
-        authenticator.logout('Logout', 'main')
-    elif st.session_state["authentication_status"] == False:
-        st.error('Username/password is incorrect')
-    elif st.session_state["authentication_status"] == None:
-        st.warning('Please enter your username and password')
 
+    main()
