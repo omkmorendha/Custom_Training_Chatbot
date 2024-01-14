@@ -1,0 +1,17 @@
+credentials:
+  usernames:
+    omkmorendha:
+      email: omkmorendha@gmail.com
+      name: Om Morendha
+      password: $2b$12$yzgeCIXIc2i/N/0eU4jGluLHNtsrqryWg/ScWP7amVQkOuAhWIWv6
+    alih:
+      email: alihasnain173@gmail.com
+      name: Ali Hasnain Lakhani
+      password: $2b$12$u52gfMpwIQnHAAn9.Sw3suPiIeveshkpswplq/RA2EmnGDXtsM9aK
+cookie:
+  expiry_days: 30
+  key: random_signature_key # Must be string
+  name: random_cookie_name
+preauthorized:
+  emails:
+  - omkmorendha@gmail.com
